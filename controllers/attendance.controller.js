@@ -1,21 +1,29 @@
 import { query } from "../utils/dbQuery.js";
 import { apiResponse } from "../utils/response.js";
 
-export const createAttendance = async (req, res) => {
+export const checkIn = async (req, res) => {
   try {
+    const { EmployeeId, CompanyId } = req.user || {};
+
+    if (!EmployeeId || !CompanyId) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 401,
+        message: "Invalid token payload",
+        error: [{ field: "Authorization", message: "Token must include EmployeeId and CompanyId" }],
+      });
+    }
+
     const body = req.body;
 
     const values = [
-      body.CompanyId,
-      body.EmployeeId,
+      CompanyId,
+      EmployeeId,
       body.CheckInTime,
-      body.CheckOutTime,
       body.CheckInLatitude,
       body.CheckInLongitude,
-      body.CheckOutLatitude,
-      body.CheckOutLongitude,
       body.CheckInSelfieUrl,
-      body.CheckOutSelfieUrl,
       body.IsWithinGeoFence,
       body.Remarks,
       body.DynamicAddress,
@@ -33,13 +41,9 @@ export const createAttendance = async (req, res) => {
         CompanyId,
         EmployeeId,
         CheckInTime,
-        CheckOutTime,
         CheckInLatitude,
         CheckInLongitude,
-        CheckOutLatitude,
-        CheckOutLongitude,
         CheckInSelfieUrl,
-        CheckOutSelfieUrl,
         IsWithinGeoFence,
         Remarks,
         DynamicAddress,
@@ -51,7 +55,7 @@ export const createAttendance = async (req, res) => {
         LocalId,
         Address
       )
-      VALUES (${values.map(() => '?').join(', ')})
+      VALUES (${values.map(() => "?").join(", ")})
     `;
 
     const result = await query(sql, values);
@@ -59,8 +63,8 @@ export const createAttendance = async (req, res) => {
     return apiResponse({
       res,
       statusCode: 201,
-      message: "Attendance created successfully",
-      data: { AttendanceId: result.insertId }
+      message: "Check-in successful",
+      data: { AttendanceId: result.insertId },
     });
 
   } catch (err) {
@@ -68,8 +72,83 @@ export const createAttendance = async (req, res) => {
       res,
       statusCode: 500,
       success: false,
-      message: "Failed to create attendance",
-      error: err.message
+      message: "Failed to check-in",
+      error: err.message,
+    });
+  }
+};
+
+export const checkOut = async (req, res) => {
+  try {
+    const { EmployeeId, CompanyId } = req.user || {};
+    const { attendanceId } = req.params;
+
+    if (!EmployeeId || !CompanyId) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 401,
+        message: "Invalid token payload",
+        error: [{ field: "Authorization", message: "Token must include EmployeeId and CompanyId" }],
+      });
+    }
+
+    if (!attendanceId) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 400,
+        message: "Attendance ID is required",
+        error: [{ field: "attendanceId", message: "Attendance ID is required" }],
+      });
+    }
+
+    // Verify the attendance belongs to the user
+    const attendanceCheck = await query(
+      "SELECT * FROM Attendance WHERE AttendanceId = ? AND EmployeeId = ? AND CompanyId = ?",
+      [attendanceId, EmployeeId, CompanyId]
+    );
+
+    if (!attendanceCheck.length) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 404,
+        message: "Attendance record not found or access denied",
+        error: [{ field: "attendanceId", message: "Invalid attendance ID" }],
+      });
+    }
+
+    const body = req.body;
+
+    const updateFields = [];
+    const values = [];
+
+    Object.keys(body).forEach((key) => {
+      if (body[key] !== undefined) {
+        updateFields.push(`${key} = ?`);
+        values.push(body[key]);
+      }
+    });
+
+    const sql = `UPDATE Attendance SET ${updateFields.join(", ")} WHERE AttendanceId = ?`;
+    values.push(attendanceId);
+
+    await query(sql, values);
+
+    return apiResponse({
+      res,
+      message: "Check-out successful",
+      data: { AttendanceId: attendanceId },
+    });
+
+  } catch (err) {
+    return apiResponse({
+      res,
+      statusCode: 500,
+      success: false,
+      message: "Failed to check-out",
+      error: err.message,
     });
   }
 };
@@ -77,10 +156,20 @@ export const createAttendance = async (req, res) => {
 
 export const getAttendance = async (req, res) => {
   try {
-    const { employeeId, companyId } = req.query;
+    const { EmployeeId, CompanyId } = req.user || {};
+
+    if (!EmployeeId || !CompanyId) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 401,
+        message: "Invalid token payload",
+        error: [{ field: "Authorization", message: "Token must include EmployeeId and CompanyId" }],
+      });
+    }
 
     let sql = `
-      SELECT 
+      SELECT
         a.*,
         c.CompanyName,
         e.FullName AS EmployeeName,
@@ -89,21 +178,10 @@ export const getAttendance = async (req, res) => {
       FROM Attendance a
       INNER JOIN Companies c ON a.CompanyId = c.CompanyId
       INNER JOIN Employees e ON a.EmployeeId = e.EmployeeId
-      WHERE 1=1
+      WHERE a.EmployeeId = ? AND a.CompanyId = ?
     `;
 
-    const params = [];
-
-    if (employeeId) {
-      sql += " AND a.EmployeeId = ?";
-      params.push(employeeId);
-    }
-
-    if (companyId) {
-      sql += " AND a.CompanyId = ?";
-      params.push(companyId);
-    }
-
+    const params = [EmployeeId, CompanyId];
     sql += " ORDER BY a.CreatedAt DESC";
 
     const data = await query(sql, params);
