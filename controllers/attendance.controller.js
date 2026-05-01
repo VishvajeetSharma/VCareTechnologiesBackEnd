@@ -205,6 +205,8 @@ export const getAttendance = async (req, res) => {
       });
     }
 
+    const { startDate, endDate } = req.query;
+
     let sql = `
       SELECT
         a.*,
@@ -219,7 +221,18 @@ export const getAttendance = async (req, res) => {
     `;
 
     const params = [EmployeeId, CompanyId];
-    sql += " ORDER BY a.CreatedAt DESC";
+
+    if (startDate) {
+      sql += " AND a.CheckInTime >= ?";
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      sql += " AND a.CheckInTime <= ?";
+      params.push(endDate);
+    }
+
+    sql += " ORDER BY a.CheckInTime DESC";
 
     const data = await query(sql, params);
 
