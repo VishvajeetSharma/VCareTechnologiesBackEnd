@@ -1,5 +1,5 @@
 import express from "express";
-import { createEmployee, loginEmployee, updateEmployeeProfile } from "../controllers/employee.controller.js";
+import { createEmployee, loginEmployee } from "../controllers/employee.controller.js";
 import { validateZod } from "../middlewares/validateZod.js";
 import { authenticateToken } from "../middlewares/auth.js";
 import upload from "../middlewares/upload.js";
@@ -7,8 +7,8 @@ import { createEmployeeSchema, loginEmployeeSchema } from "../validators/employe
 
 const router = express.Router();
 
-router.post("/create", upload.single("image"), validateZod(createEmployeeSchema), createEmployee);
+router.post("/create", validateZod(createEmployeeSchema), createEmployee);
 router.post("/login", validateZod(loginEmployeeSchema), loginEmployee);
-router.put("/profile/image", authenticateToken, upload.single("image"), updateEmployeeProfile);
+// router.put("/profile/image", authenticateToken, upload.single("image"), updateEmployeeProfile);
 
 export default router;
