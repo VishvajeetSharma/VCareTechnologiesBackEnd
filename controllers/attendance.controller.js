@@ -15,25 +15,37 @@ export const checkIn = async (req, res) => {
       });
     }
 
+    // Check if image is uploaded
+    if (!req.file) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 400,
+        message: "Check-in image is required",
+        error: [{ field: "image", message: "Image file is required for check-in" }],
+      });
+    }
+
     const body = req.body;
+    const checkInImageUrl = `/uploads/${req.file.filename}`;
 
     const values = [
       CompanyId,
       EmployeeId,
-      body.CheckInTime,
-      body.CheckInLatitude,
-      body.CheckInLongitude,
-      body.CheckInSelfieUrl,
-      body.IsWithinGeoFence,
-      body.Remarks,
-      body.DynamicAddress,
-      body.LocationSource,
-      body.AccuracyMeters,
-      body.FaceVerified,
-      body.ImageTimestamp,
-      body.DeviceInfo,
-      body.LocalId,
-      body.Address,
+      body.CheckInTime ?? null,
+      body.CheckInLatitude ?? null,
+      body.CheckInLongitude ?? null,
+      checkInImageUrl,
+      body.IsWithinGeoFence ?? null,
+      body.Remarks ?? null,
+      body.DynamicAddress ?? null,
+      body.LocationSource ?? null,
+      body.AccuracyMeters ?? null,
+      body.FaceVerified ?? null,
+      body.ImageTimestamp ?? null,
+      body.DeviceInfo ?? null,
+      body.LocalId ?? null,
+      body.Address ?? null,
     ];
 
     const sql = `
@@ -64,7 +76,11 @@ export const checkIn = async (req, res) => {
       res,
       statusCode: 201,
       message: "Check-in successful",
-      data: { AttendanceId: result.insertId },
+      data: { 
+        AttendanceId: result.insertId,
+        imageUrl: checkInImageUrl,
+        fileName: req.file.filename,
+      },
     });
 
   } catch (err) {
@@ -119,11 +135,28 @@ export const checkOut = async (req, res) => {
       });
     }
 
+    // Check if image is uploaded
+    if (!req.file) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 400,
+        message: "Check-out image is required",
+        error: [{ field: "image", message: "Image file is required for check-out" }],
+      });
+    }
+
     const body = req.body;
+    const checkOutImageUrl = `/uploads/${req.file.filename}`;
 
     const updateFields = [];
     const values = [];
 
+    // Add image URL
+    updateFields.push("CheckOutSelfieUrl = ?");
+    values.push(checkOutImageUrl);
+
+    // Add other fields from body
     Object.keys(body).forEach((key) => {
       if (body[key] !== undefined) {
         updateFields.push(`${key} = ?`);
@@ -139,7 +172,11 @@ export const checkOut = async (req, res) => {
     return apiResponse({
       res,
       message: "Check-out successful",
-      data: { AttendanceId: attendanceId },
+      data: { 
+        AttendanceId: attendanceId,
+        imageUrl: checkOutImageUrl,
+        fileName: req.file.filename,
+      },
     });
 
   } catch (err) {

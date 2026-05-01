@@ -15,10 +15,16 @@ export const createEmployee = async (req, res) => {
       value: Email,
     });
 
+    // Handle optional profile image
+    let profileImageUrl = null;
+    if (req.file) {
+      profileImageUrl = `/uploads/${req.file.filename}`;
+    }
+
     const sql = `
       INSERT INTO Employees
-      (CompanyId, EmployeeCode, FullName, MobileNo, Email, PasswordHash)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (CompanyId, EmployeeCode, FullName, MobileNo, Email, PasswordHash, ProfileImageUrl)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await query(sql, [
@@ -28,13 +34,17 @@ export const createEmployee = async (req, res) => {
       req.body.MobileNo,
       req.body.Email,
       await hashPassword(req.body.Password),
+      profileImageUrl,
     ]);
 
     return apiResponse({
       res,
       statusCode: 201,
-      message: "Employee created",
-      data: { EmployeeId: result.insertId },
+      message: "Employee created successfully",
+      data: { 
+        EmployeeId: result.insertId,
+        profileImageUrl: profileImageUrl,
+      },
     });
   } catch (err) {
     const statusCode = err.message?.includes("already exists") ? 409 : err.code ? 400 : 500;
@@ -106,6 +116,58 @@ export const loginEmployee = async (req, res) => {
       success: false,
       statusCode: 500,
       message: "Login failed",
+      error: err.message,
+    });
+  }
+};
+
+export const updateEmployeeProfile = async (req, res) => {
+  try {
+    const { EmployeeId, CompanyId } = req.user || {};
+
+    if (!EmployeeId || !CompanyId) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 401,
+        message: "Invalid token payload",
+        error: [{ field: "Authorization", message: "Token must include EmployeeId and CompanyId" }],
+      });
+    }
+
+    // Check if image is uploaded
+    if (!req.file) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 400,
+        message: "Profile image is required",
+        error: [{ field: "image", message: "Image file is required" }],
+      });
+    }
+
+    const profileImageUrl = `/uploads/${req.file.filename}`;
+
+    const sql = `UPDATE Employees SET ProfileImageUrl = ? WHERE EmployeeId = ? AND CompanyId = ?`;
+
+    await query(sql, [profileImageUrl, EmployeeId, CompanyId]);
+
+    return apiResponse({
+      res,
+      message: "Profile image updated successfully",
+      data: {
+        EmployeeId: EmployeeId,
+        profileImageUrl: profileImageUrl,
+        fileName: req.file.filename,
+      },
+    });
+
+  } catch (err) {
+    return apiResponse({
+      res,
+      success: false,
+      statusCode: 500,
+      message: "Failed to update profile image",
       error: err.message,
     });
   }
