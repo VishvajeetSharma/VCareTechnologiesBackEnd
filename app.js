@@ -7,6 +7,7 @@ import employeeRoutes from "./routes/employee.routes.js";
 import attendanceRoutes from "./routes/attendance.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import upload from "./middlewares/upload.js";
+import { apiResponse } from "./utils/response.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +46,16 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
 app.use("/api/employees", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/admin", adminRoutes);
+
+// 404 - Not Found handler
+app.use((req, res) => {
+  return apiResponse({
+    res,
+    success: false,
+    statusCode: 404,
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 
