@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { testConnection } from "./dbConfig/db.js";
 import employeeRoutes from "./routes/employee.routes.js";
 import attendanceRoutes from "./routes/attendance.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import upload from "./middlewares/upload.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,6 +44,7 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
 // routes
 app.use("/api/employees", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/admin", adminRoutes);
 
 const PORT = process.env.PORT || 3000;
 

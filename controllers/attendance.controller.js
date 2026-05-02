@@ -232,8 +232,6 @@ export const getAttendance = async (req, res) => {
       params.push(endDate);
     }
 
-    sql += " ORDER BY a.CheckInTime DESC";
-
     const data = await query(sql, params);
 
     return apiResponse({
