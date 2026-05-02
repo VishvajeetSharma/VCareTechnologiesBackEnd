@@ -54,11 +54,11 @@ export const createEmployee = async (req, res) => {
 
 export const loginEmployee = async (req, res) => {
   try {
-    const { Email, Password } = req.body;
+    const { MobileNo, Password } = req.body;    // Email → MobileNo
 
     const users = await query(
-      "SELECT * FROM Employees WHERE Email = ?",
-      [Email]
+      "SELECT * FROM Employees WHERE MobileNo = ?",   // Email → MobileNo
+      [MobileNo]
     );
 
     if (!users.length) {
@@ -86,7 +86,7 @@ export const loginEmployee = async (req, res) => {
     const token = generateToken({
       EmployeeId: user.EmployeeId,
       CompanyId: user.CompanyId,
-      Email: user.Email,
+      MobileNo: user.MobileNo,        // Email → MobileNo
     });
 
     return apiResponse({
@@ -97,7 +97,7 @@ export const loginEmployee = async (req, res) => {
         employee: {
           EmployeeId: user.EmployeeId,
           FullName: user.FullName,
-          Email: user.Email,
+          MobileNo: user.MobileNo,    // Email → MobileNo
         },
       },
     });

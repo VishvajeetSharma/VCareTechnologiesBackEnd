@@ -26,9 +26,10 @@ export const createEmployeeSchema = z.object({
 });
 
 export const loginEmployeeSchema = z.object({
-  Email: z.string()
+  MobileNo: z.string()
     .trim()
-    .email("Invalid Email address"),
+    .min(10, "Mobile number must be at least 10 characters") 
+    .regex(/^\d+$/, "Mobile number must contain only digits"),
 
   Password: z.string()
     .min(6, "Password must be at least 6 characters"),
