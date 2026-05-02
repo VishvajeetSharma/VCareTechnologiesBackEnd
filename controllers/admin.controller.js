@@ -52,7 +52,7 @@ export const getAllAttendanceAdmin = async (req, res) => {
       FROM Attendance a
       INNER JOIN Companies c ON a.CompanyId = c.CompanyId
       INNER JOIN Employees e ON a.EmployeeId = e.EmployeeId
-      ORDER BY a.CheckInTime DESC
+      ORDER BY a.AttendanceId DESC
     `;
 
     const data = await query(sql);
