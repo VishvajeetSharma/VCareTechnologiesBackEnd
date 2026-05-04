@@ -6,7 +6,6 @@ import { validateUnique } from "../validators/custom.validators.js";
 
 export const createEmployee = async (req, res) => {
   try {
-
     const { Email } = req.body;
 
     await validateUnique({
@@ -15,10 +14,12 @@ export const createEmployee = async (req, res) => {
       value: Email,
     });
 
+    const role = req.body.Role || "employee";
+
     const sql = `
       INSERT INTO Employees
-      (CompanyId, EmployeeCode, FullName, MobileNo, Email, PasswordHash)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (CompanyId, EmployeeCode, FullName, MobileNo, Email, PasswordHash, Role)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await query(sql, [
@@ -28,18 +29,25 @@ export const createEmployee = async (req, res) => {
       req.body.MobileNo,
       req.body.Email,
       await hashPassword(req.body.Password),
+      role,
     ]);
 
     return apiResponse({
       res,
       statusCode: 201,
       message: "Employee created successfully",
-      data: { 
-        EmployeeId: result.insertId
+      data: {
+        EmployeeId: result.insertId,
+        Role: role,
       },
     });
+
   } catch (err) {
-    const statusCode = err.message?.includes("already exists") ? 409 : err.code ? 400 : 500;
+    const statusCode = err.message?.includes("already exists")
+      ? 409
+      : err.code
+      ? 400
+      : 500;
 
     return apiResponse({
       res,
@@ -54,10 +62,10 @@ export const createEmployee = async (req, res) => {
 
 export const loginEmployee = async (req, res) => {
   try {
-    const { MobileNo, Password } = req.body;    // Email → MobileNo
+    const { MobileNo, Password } = req.body;    
 
     const users = await query(
-      "SELECT * FROM Employees WHERE MobileNo = ?",   // Email → MobileNo
+      "SELECT * FROM Employees WHERE MobileNo = ?",  
       [MobileNo]
     );
 
@@ -86,7 +94,8 @@ export const loginEmployee = async (req, res) => {
     const token = generateToken({
       EmployeeId: user.EmployeeId,
       CompanyId: user.CompanyId,
-      MobileNo: user.MobileNo,        // Email → MobileNo
+      MobileNo: user.MobileNo,  
+      Role: user.Role 
     });
 
     return apiResponse({
@@ -97,7 +106,8 @@ export const loginEmployee = async (req, res) => {
         employee: {
           EmployeeId: user.EmployeeId,
           FullName: user.FullName,
-          MobileNo: user.MobileNo,    // Email → MobileNo
+          MobileNo: user.MobileNo,
+          Role: user.Role,
         },
       },
     });
@@ -113,54 +123,63 @@ export const loginEmployee = async (req, res) => {
   }
 };
 
-// export const updateEmployeeProfile = async (req, res) => {
-//   try {
-//     const { EmployeeId, CompanyId } = req.user || {};
+export const updatePassword = async (req, res) => {
+  try {
+    const { EmployeeId, CompanyId } = req.user || {};
+    const { oldPassword, newPassword, confirmPassword } = req.body;
 
-//     if (!EmployeeId || !CompanyId) {
-//       return apiResponse({
-//         res,
-//         success: false,
-//         statusCode: 401,
-//         message: "Invalid token payload",
-//         error: [{ field: "Authorization", message: "Token must include EmployeeId and CompanyId" }],
-//       });
-//     }
+    if (!EmployeeId || !CompanyId) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 401,
+        message: "Invalid token payload",
+      });
+    }
 
-//     // Check if image is uploaded
-//     if (!req.file) {
-//       return apiResponse({
-//         res,
-//         success: false,
-//         statusCode: 400,
-//         message: "Profile image is required",
-//         error: [{ field: "image", message: "Image file is required" }],
-//       });
-//     }
+    if (newPassword !== confirmPassword) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 400,
+        message: "New password and confirm password do not match",
+      });
+    }
 
-//     const profileImageUrl = `/uploads/${req.file.filename}`;
+    const users = await query(
+      "SELECT PasswordHash FROM Employees WHERE EmployeeId = ? AND CompanyId = ?",
+      [EmployeeId, CompanyId]
+    );
 
-//     const sql = `UPDATE Employees SET ProfileImageUrl = ? WHERE EmployeeId = ? AND CompanyId = ?`;
+    if (!users.length) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 404,
+        message: "User not found",
+      });
+    }
 
-//     await query(sql, [profileImageUrl, EmployeeId, CompanyId]);
+    const user = users[0];
 
-//     return apiResponse({
-//       res,
-//       message: "Profile image updated successfully",
-//       data: {
-//         EmployeeId: EmployeeId,
-//         profileImageUrl: profileImageUrl,
-//         fileName: req.file.filename,
-//       },
-//     });
+    const hashedPassword = await hashPassword(newPassword);
+    await query(
+      "UPDATE Employees SET PasswordHash = ? WHERE EmployeeId = ? AND CompanyId = ?",
+      [hashedPassword, EmployeeId, CompanyId]
+    );
 
-//   } catch (err) {
-//     return apiResponse({
-//       res,
-//       success: false,
-//       statusCode: 500,
-//       message: "Failed to update profile image",
-//       error: err.message,
-//     });
-//   }
-// };
+    return apiResponse({
+      res,
+      message: "Password updated successfully",
+    });
+
+  } catch (err) {
+    return apiResponse({
+      res,
+      success: false,
+      statusCode: 500,
+      message: "Failed to update password",
+      error: err.message,
+    });
+  }
+};

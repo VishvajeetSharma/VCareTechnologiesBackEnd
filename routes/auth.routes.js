@@ -1,14 +1,14 @@
 import express from "express";
-import { createEmployee, loginEmployee } from "../controllers/employee.controller.js";
+import { createEmployee, loginEmployee, updatePassword } from "../controllers/auth.controller.js";
 import { validateZod } from "../middlewares/validateZod.js";
 import { authenticateToken } from "../middlewares/auth.js";
 import upload from "../middlewares/upload.js";
-import { createEmployeeSchema, loginEmployeeSchema } from "../validators/employee.schema.js";
+import { createEmployeeSchema, loginEmployeeSchema, updatePasswordSchema } from "../validators/auth.schema.js";
 
 const router = express.Router();
 
 router.post("/create", validateZod(createEmployeeSchema), createEmployee);
 router.post("/login", validateZod(loginEmployeeSchema), loginEmployee);
-// router.put("/profile/image", authenticateToken, upload.single("image"), updateEmployeeProfile);
+router.put("/update-password", authenticateToken, validateZod(updatePasswordSchema), updatePassword);
 
 export default router;

@@ -13,9 +13,11 @@ export const getAllEmployeesAdmin = async (req, res) => {
         e.MobileNo,
         e.Email,
         e.IsActive,
-        e.CreatedAt
+        e.CreatedAt,
+        e.Role
       FROM Employees e
       INNER JOIN Companies c ON e.CompanyId = c.CompanyId
+      WHERE e.Role = 'employee'
       ORDER BY e.CreatedAt DESC
     `;
 
@@ -37,7 +39,6 @@ export const getAllEmployeesAdmin = async (req, res) => {
     });
   }
 };
-
 
 
 export const getAllAttendanceAdmin = async (req, res) => {

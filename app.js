@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { testConnection } from "./dbConfig/db.js";
-import employeeRoutes from "./routes/employee.routes.js";
+import employeeRoutes from "./routes/auth.routes.js";
 import attendanceRoutes from "./routes/attendance.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import upload from "./middlewares/upload.js";
@@ -43,7 +43,7 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
 });
 
 // routes
-app.use("/api/employees", employeeRoutes);
+app.use("/api/auth", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/admin", adminRoutes);
 

@@ -19,18 +19,30 @@ export const createEmployeeSchema = z.object({
 
   Email: z.string()
     .trim()
+    .lowercase()
     .email("Invalid Email address"),
 
   Password: z.string()
     .min(6, "Password must be at least 6 characters"),
+  
+  Role: z.string()
+    .trim()
+    .optional()
+    .default("employee"),
 });
 
 export const loginEmployeeSchema = z.object({
   MobileNo: z.string()
     .trim()
-    .min(10, "Mobile number must be at least 10 characters") 
+    .min(6, "Mobile number must be at least 6 characters") 
     .regex(/^\d+$/, "Mobile number must contain only digits"),
 
   Password: z.string()
     .min(6, "Password must be at least 6 characters"),
+});
+
+
+export const updatePasswordSchema = z.object({
+  newPassword: z.string().min(6, "New password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "New password must be at least 6 characters"),
 });
