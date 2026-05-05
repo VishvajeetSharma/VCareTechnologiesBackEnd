@@ -40,6 +40,50 @@ export const getAllEmployeesAdmin = async (req, res) => {
   }
 };
 
+export const updateAttendanceStatus = async (req, res) => {
+  try {
+    const { Role } = req.user || {};
+    const { attendanceId } = req.params;
+    const { Status } = req.body;
+
+    if (Role !== 'admin') {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 403,
+        message: "Forbidden: Only admins can update status",
+      });
+    }
+
+    if (!attendanceId || !Status) {
+      return apiResponse({
+        res,
+        success: false,
+        statusCode: 400,
+        message: "Attendance ID and Status are required",
+      });
+    }
+
+    const sql = "UPDATE Attendance SET Status = ? WHERE AttendanceId = ?";
+    await query(sql, [Status, attendanceId]);
+
+    return apiResponse({
+      res,
+      message: `Attendance status updated to ${Status} successfully`,
+      data: { attendanceId, Status },
+    });
+
+  } catch (err) {
+    return apiResponse({
+      res,
+      success: false,
+      statusCode: 500,
+      message: "Failed to update attendance status",
+      error: err.message,
+    });
+  }
+};
+
 
 export const getAllAttendanceAdmin = async (req, res) => {
   try {
