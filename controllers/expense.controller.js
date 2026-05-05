@@ -104,6 +104,15 @@ export const getExpenses = async (req, res) => {
   }
 };
 
+export const getExpenseTypes = async (req, res) => {
+  try {
+    const data = await query("SELECT id, name FROM expense_types WHERE status = 'active' ORDER BY name ASC");
+    return apiResponse({ res, message: "Expense types fetched successfully", data });
+  } catch (err) {
+    return apiResponse({ res, success: false, statusCode: 500, message: "Failed to fetch expense types", error: err.message });
+  }
+};
+
 export const updateExpenseStatus = async (req, res) => {
   try {
     const { Role, CompanyId } = req.user || {};
