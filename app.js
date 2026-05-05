@@ -6,8 +6,11 @@ import { testConnection } from "./dbConfig/db.js";
 import employeeRoutes from "./routes/auth.routes.js";
 import attendanceRoutes from "./routes/attendance.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import expenseRoutes from "./routes/expense.routes.js";
 import upload from "./middlewares/upload.js";
 import { apiResponse } from "./utils/response.js";
+
+const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,6 +49,7 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
 app.use("/api/auth", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/expense", expenseRoutes);
 
 // 404 - Not Found handler
 app.use((req, res) => {
@@ -55,6 +59,10 @@ app.use((req, res) => {
     statusCode: 404,
     message: `Route ${req.method} ${req.originalUrl} not found`,
   });
+});
+
+router.get("/", (req, res) => {
+  return apiResponse({res, message:"API is working..."})
 });
 
 const PORT = process.env.PORT || 3000;
