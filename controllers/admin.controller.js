@@ -162,6 +162,39 @@ export const adminAddExpense = async (req, res) => {
   }
 };
 
+export const adminCheckout = async (req, res) => {
+  try {
+    const { CompanyId, Role } = req.user || {};
+    const { AttendanceId, CheckOutTime } = req.body;
+
+    if (Role !== "admin") {
+      return apiResponse({ res, success: false, statusCode: 403, message: "Only admin can perform checkout" });
+    }
+
+    if (!AttendanceId || !CheckOutTime) {
+      return apiResponse({ res, success: false, statusCode: 400, message: "AttendanceId and CheckOutTime are required" });
+    }
+
+    const attendance = await query(
+      "SELECT AttendanceId FROM Attendance WHERE AttendanceId = ? AND CompanyId = ?",
+      [AttendanceId, CompanyId]
+    );
+
+    if (!attendance.length) {
+      return apiResponse({ res, success: false, statusCode: 404, message: "Attendance record not found" });
+    }
+
+    await query(
+      "UPDATE Attendance SET CheckOutTime = ? WHERE AttendanceId = ?",
+      [CheckOutTime, AttendanceId]
+    );
+
+    return apiResponse({ res, message: "Checkout successful", data: { AttendanceId } });
+  } catch (err) {
+    return apiResponse({ res, success: false, statusCode: 500, message: "Failed to checkout", error: err.message });
+  }
+};
+
 export const adminAddAttendance = async (req, res) => {
   try {
     const CompanyId = 1;
@@ -253,3 +286,5 @@ export const adminAddAttendance = async (req, res) => {
     });
   }
 };
+
+
