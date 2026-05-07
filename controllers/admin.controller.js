@@ -120,6 +120,48 @@ export const getAllAttendanceAdmin = async (req, res) => {
 };
 
 
+export const adminAddExpense = async (req, res) => {
+  try {
+    const { CompanyId, Role } = req.user || {};
+
+    if (Role !== "admin") {
+      return apiResponse({ res, success: false, statusCode: 403, message: "Only admin can add expenses" });
+    }
+
+    const { employeeId, amount, description, expenseType, hasBill } = req.body;
+
+    const empCheck = await query(
+      "SELECT EmployeeId FROM Employees WHERE EmployeeId = ? AND CompanyId = ?",
+      [employeeId, CompanyId]
+    );
+
+    if (!empCheck.length) {
+      return apiResponse({ res, success: false, statusCode: 404, message: "Employee not found in your company" });
+    }
+
+    const ReceiptUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    if (hasBill === true && !ReceiptUrl) {
+      return apiResponse({ res, success: false, statusCode: 400, message: "Bill file is required when hasBill is true" });
+    }
+
+    const result = await query(
+      `INSERT INTO Expenses (CompanyId, EmployeeId, Title, Description, Amount, ExpenseDate, Category, ReceiptUrl)
+       VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?)`,
+      [CompanyId, employeeId, expenseType, description, amount, expenseType, ReceiptUrl]
+    );
+
+    return apiResponse({
+      res,
+      statusCode: 201,
+      message: "Expense added successfully",
+      data: { ExpenseId: result.insertId, ReceiptUrl },
+    });
+  } catch (err) {
+    return apiResponse({ res, success: false, statusCode: 500, message: "Failed to add expense", error: err.message });
+  }
+};
+
 export const adminAddAttendance = async (req, res) => {
   try {
     const CompanyId = 1;
