@@ -50,13 +50,13 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/expense", expenseRoutes);
 
 app.get("/api", (req, res) => {
-  return apiResponse({res, message:"API is working..."})
+  return apiResponse({res, message:"API is working..."}) 
 });
 
 // 404 - Not Found handler
 app.use((req, res) => {
   return apiResponse({
-    res,
+    res, 
     success: false,
     statusCode: 404,
     message: `Route ${req.method} ${req.originalUrl} not found`,

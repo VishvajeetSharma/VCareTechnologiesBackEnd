@@ -24,12 +24,12 @@ export const getDashboardStats = async (req, res) => {
     const expResult = await query(
       `SELECT
          COALESCE(SUM(Amount), 0) AS totalExpense,
-         COALESCE(SUM(CASE WHEN Status != 'pending' THEN Amount ELSE 0 END), 0) AS totalWithdrawal,
-         COALESCE(SUM(CASE WHEN Status = 'pending' THEN Amount ELSE 0 END), 0) AS pendingWithdrawal
+         COALESCE(SUM(CASE WHEN Status = 'paid' THEN Amount ELSE 0 END), 0) AS totalWithdrawal,
+         COALESCE(SUM(CASE WHEN Status != 'paid' and Status != 'rejected' THEN Amount ELSE 0 END), 0) AS pendingWithdrawal
        FROM Expenses
        WHERE CompanyId = ?
-         AND MONTH(ExpenseDate) = ?
-         AND YEAR(ExpenseDate) = ?`,
+         AND MONTH(ExpenseDate) = ? 
+         AND YEAR(ExpenseDate) = ?`, 
       [CompanyId, m, y]
     );
 
